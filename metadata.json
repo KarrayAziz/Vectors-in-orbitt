@@ -1,0 +1,5 @@
+{
+  "name": "Bio-Vector Orbit",
+  "description": "A Vector-Powered Biological Discovery Platform integrating NCBI retrieval, Semantic Chunking, and Qdrant similarity search with 3D visualization.",
+  "requestFramePermissions": []
+}
