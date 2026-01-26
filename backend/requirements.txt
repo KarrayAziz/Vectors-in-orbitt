@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+qdrant-client
+fastembed
+biopython
+chonkie
+numpy
+python-dotenv

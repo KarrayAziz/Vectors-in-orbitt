@@ -21,14 +21,24 @@ def setup_collection():
     
     client.create_collection(
         collection_name=COLLECTION_NAME,
-        vectors_config=models.VectorParams(
-            size=384, # Dimensions for all-MiniLM-L6-v2
-            distance=models.Distance.COSINE
-        ),
+        vectors_config={
+            "text": models.VectorParams(
+                size=384,  # FastEmbed BGE-Small
+                distance=models.Distance.COSINE
+            ),
+            "protein": models.VectorParams(
+                size=384,  # Using Text Model as fallback
+                distance=models.Distance.COSINE
+            ),
+            "molecule": models.VectorParams(
+                size=384,  # Using Text Model as fallback
+                distance=models.Distance.COSINE
+            ),
+        },
         # HNSW Tuning for High Precision Biological Clusters
         hnsw_config=models.HnswConfigDiff(
-            m=32,               # Edges per node (higher = better recall, slower build)
-            ef_construct=200,   # Candidates during build (higher = better index quality)
+            m=32,               # Edges per node
+            ef_construct=200,   # Candidates during build
             full_scan_threshold=10000
         ),
         # Optimize for speed
