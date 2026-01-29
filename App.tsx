@@ -22,13 +22,11 @@ function App() {
     setLoading(true);
     setResults([]);
     try {
-      const res = await axios.post(`${API_URL}/search`, {
-        query,
-        type: searchType,
-        limit: 12,
-        min_delta_g: 0, // Default filter
+      const res = await axios.get(`${API_URL}/search`, {
+        params: { query }
       });
-      setResults(res.data.results);
+      // Backend returns directly the list of records
+      setResults(res.data);
     } catch (err) {
       console.error("Search failed:", err);
       alert("Search failed. Ensure backend is running.");
@@ -37,18 +35,14 @@ function App() {
     }
   };
 
-  const handleIngest = async () => {
-    if (!query.trim()) return;
+  const handleUpdateDatabase = async () => {
     setIngesting(true);
     try {
-      await axios.post(`${API_URL}/ingest`, {
-        query,
-        max_results: 5
-      });
-      alert("Ingestion successfully triggered! Data is being processed.");
+      await axios.post(`${API_URL}/update-db`);
+      alert("Database update successfully triggered! Check backend console for progress.");
     } catch (err) {
       console.error("Ingestion failed:", err);
-      alert("Ingestion failed. Ensure backend is running.");
+      alert("Database update failed. Ensure backend is running.");
     } finally {
       setIngesting(false);
     }
@@ -77,13 +71,13 @@ function App() {
 
           <div className="flex gap-4">
             <button
-              onClick={handleIngest}
-              className="flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+              onClick={handleUpdateDatabase}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm font-semibold text-slate-300 hover:text-white hover:border-bio-500 transition-all shadow-lg active:scale-95 disabled:opacity-50"
               disabled={ingesting}
-              title="Fetch new data from NCBI"
+              title="Fetch latest articles from PubMed"
             >
               {ingesting ? <Loader2 size={16} className="animate-spin" /> : <Database size={16} />}
-              Dynamic Ingest
+              Update Database
             </button>
           </div>
         </header>
@@ -98,7 +92,7 @@ function App() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search biological concepts, targets, or sequences..."
+                placeholder="Ask anything (e.g., 'What are the latest treatments for Alzheimer?') ..."
                 className="flex-1 bg-transparent border-none outline-none text-white placeholder-slate-500 h-10"
               />
               <div className="flex items-center gap-1 pr-2 border-l border-slate-700 ml-2 pl-2">
@@ -141,8 +135,8 @@ function App() {
           {loading && (
             <div className="text-center py-20">
               <Loader2 className="mx-auto text-bio-500 mb-4 animate-spin" size={48} />
-              <p className="text-slate-400 font-medium">Fetching from NCBI and processing...</p>
-              <p className="text-slate-500 text-sm mt-2">This may take a few seconds</p>
+              <p className="text-slate-400 font-medium">Analyzing database for semantic matches...</p>
+              <p className="text-slate-500 text-sm mt-2">Connecting to Qdrant vector store</p>
             </div>
           )}
 
@@ -156,8 +150,14 @@ function App() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {results.map((res) => (
               <ResultCard
-                key={res.id}
-                {...res}
+                key={res.pmid}
+                id={res.pmid}
+                score={res.score}
+                payload={{
+                  title: res.title,
+                  source: "PubMed",
+                  text: res.abstract
+                }}
                 onViewStructure={setViewingPdbId}
               />
             ))}

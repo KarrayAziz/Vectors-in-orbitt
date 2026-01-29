@@ -9,11 +9,7 @@ services:
       - "6334:6334"
     volumes:
       - qdrant_storage:/qdrant/storage
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:6333/health" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    restart: unless-stopped
 
   backend:
     build: ./backend
@@ -23,9 +19,16 @@ services:
     environment:
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
+    volumes:
+      - ./backend:/app
     depends_on:
-      qdrant:
-        condition: service_healthy
+      - qdrant
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     restart: unless-stopped
 
   frontend:
@@ -37,7 +40,8 @@ services:
     ports:
       - "3000:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

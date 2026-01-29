@@ -3,6 +3,8 @@ uvicorn[standard]
 qdrant-client
 fastembed
 biopython
-chonkie
+chonkie[fastembed]
 numpy
 python-dotenv
+sentence-transformers
+torch

@@ -136,24 +136,69 @@ Vectros-in-orbit2.0/
 - Node.js 18+
 - Qdrant (running on localhost:6333)
 
-### Backend Setup
+### Windows Setup
+
+1. **Run the automated setup script**:
+   ```cmd
+   setup.bat
+   ```
+
+2. **Start Qdrant** (in a separate terminal):
+   ```cmd
+   docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
+   ```
+
+3. **Run the application**:
+   ```cmd
+   run.bat
+   ```
+
+### Linux/Mac Setup
+
+1. **Make scripts executable and run setup**:
+   ```bash
+   chmod +x setup.sh run.sh
+   ./setup.sh
+   ```
+
+2. **Start Qdrant** (in a separate terminal):
+   ```bash
+   docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
+   ```
+
+3. **Run the application**:
+   ```bash
+   ./run.sh
+   ```
+
+### Manual Step-by-Step (Advanced)
+
+If the scripts don't work, follow these steps manually:
+
+**Backend:**
 ```bash
 cd backend
+python -m venv .venv
+
+# Windows:
+.venv\Scripts\activate.bat
+# Linux/Mac:
+source .venv/bin/activate
+
 pip install -r requirements.txt
-python qdrant_setup.py
 python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Frontend Setup
+**Frontend (in a new terminal):**
 ```bash
 npm install
 npm run dev
 ```
 
-### Start Qdrant
-```bash
-docker run -p 6333:6333 -p 6334:6334 qdrant/qdrant
-```
+**Access:**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000/docs
+- Qdrant: http://localhost:6333/dashboard
 
 </details>
 
