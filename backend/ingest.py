@@ -1,8 +1,8 @@
 import json
 from datetime import datetime
 from pubmed import fetch_pubmed_articles
-from embeddings import embed
-from qdrant_db import init_collection, upsert_articles
+from embeddings import embed, chunk_text
+from qdrant_db import init_collection, upsert_articles, get_ingested_pmids
 
 STATE_FILE = "state.json"
 
@@ -36,22 +36,61 @@ def update_database():
         print("[INFO] No new articles found. Ingestion complete.")
         return {"status": "No new articles"}
 
-    print("[INFO] Extracting abstracts for embedding...")
-    abstracts = [a["abstract"] for a in articles]
+    # Duplicate detection: filter out articles already in the database
+    print("[INFO] Checking for duplicates...")
+    ingested_pmids = get_ingested_pmids()
+    print(f"[INFO] Found {len(ingested_pmids)} articles already in database.")
     
-    print("[INFO] Generating embeddings for abstracts (this may take some time)...")
-    vectors = embed(abstracts)
-    print(f"[INFO] Embeddings generated for {len(vectors)} articles.")
+    new_articles = [a for a in articles if a.get("pmid") not in ingested_pmids]
+    num_new = len(new_articles)
+    num_duplicates = num_articles - num_new
+    
+    if num_duplicates > 0:
+        print(f"[INFO] Skipping {num_duplicates} duplicate article(s). Processing {num_new} new article(s).")
+    
+    if not new_articles:
+        print("[INFO] All fetched articles are duplicates. Ingestion complete.")
+        return {"status": f"No new articles (all {num_articles} were duplicates)"}
 
-    print("[INFO] Upserting articles into Qdrant...")
-    upsert_articles(articles, vectors)
-    print(f"[INFO] Successfully upserted {len(articles)} articles into Qdrant.")
+    print("[INFO] Chunking abstracts and generating embeddings...")
+    
+    # Chunk each abstract and prepare vectors with associated article metadata
+    all_chunks = []  # List of (chunk_text, article) tuples
+    all_embeddings = []
+    
+    for article in new_articles:
+        abstract = article.get("abstract", "")
+        if not abstract.strip():
+            continue
+        
+        # Chunk the abstract
+        chunks = chunk_text(abstract)
+        for chunk_text_item in chunks:
+            all_chunks.append((chunk_text_item, article))
+    
+    if not all_chunks:
+        print("[INFO] No valid chunks to embed. Ingestion complete.")
+        return {"status": "No valid chunks"}
+    
+    print(f"[INFO] Total chunks created: {len(all_chunks)}")
+    
+    # Embed all chunks at once
+    chunk_texts_only = [chunk[0] for chunk in all_chunks]
+    print("[INFO] Generating embeddings for chunks (this may take some time)...")
+    vectors = embed(chunk_texts_only)
+    print(f"[INFO] Embeddings generated for {len(vectors)} chunks.")
+
+    print("[INFO] Upserting chunks into Qdrant...")
+    upsert_articles(all_chunks, vectors)
+    print(f"[INFO] Successfully upserted {len(all_chunks)} chunks into Qdrant.")
 
     today = datetime.today().strftime("%Y/%m/%d")
     save_last_date(today)
 
     print("[INFO] Ingestion process complete.")
-    return {"status": f"{num_articles} articles added"}
+    return {"status": f"{len(all_chunks)} chunks from {num_new} new articles added (skipped {num_duplicates} duplicates)"}
+
+
 
 #testing 
 

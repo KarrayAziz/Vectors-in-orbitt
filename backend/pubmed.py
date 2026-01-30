@@ -3,7 +3,7 @@ from datetime import datetime
 
 Entrez.email = "your_email@example.com"
 
-def fetch_pubmed_articles(from_date=None, max_results=2500):
+def fetch_pubmed_articles(from_date=None, max_results=200):
     query = "hasabstract[text]"
     if from_date:
         query += f" AND ({from_date}[PDAT] : 3000[PDAT])"

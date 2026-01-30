@@ -1,10 +1,11 @@
 fastapi
 uvicorn[standard]
+python-multipart
 qdrant-client
 fastembed
 biopython
-chonkie[fastembed]
+chonkie[model2vec]
 numpy
 python-dotenv
-sentence-transformers
-torch
+requests
+openai
