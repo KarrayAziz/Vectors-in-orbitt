@@ -54,3 +54,6 @@ Desktop.ini
 
 # Project specific local state
 backend/state.json
+
+# Qdrant runtime data
+qdrant_data/
