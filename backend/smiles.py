@@ -1,5 +1,6 @@
 import numpy as np
 import os
+
 from tensorflow.keras.models import load_model
 from qdrant_client import QdrantClient
 
@@ -81,7 +82,7 @@ def search_similar_smiles(smiles_string, limit=5):
         
         # Use the remote cloud client and targeted collection
         results = client.query_points(
-            collection_name="smiles_final",
+            collection_name="smiles_molecules",
             query=query_vec.tolist(),
             using="latent", # Ensure this matches your collection vector name
             limit=limit
