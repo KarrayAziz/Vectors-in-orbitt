@@ -10,7 +10,7 @@ RUN npm install
 COPY . .
 
 # Vite default dev port
-EXPOSE 80
+EXPOSE 3000
 
 # --host allows access from localhost / other devices
 CMD ["npm", "run", "dev", "--", "--host"]

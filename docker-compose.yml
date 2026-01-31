@@ -28,13 +28,16 @@ services:
       - ./backend:/app
     depends_on:
       - qdrant
+    environment:
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
 
   frontend:
     build:
       context: ./frontend
     container_name: bio-vector-frontend
     ports:
-      - "3000:80"
+      - "3000:3000"
 
 configs:
   qdrant_config:
