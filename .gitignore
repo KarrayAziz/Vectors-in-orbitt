@@ -10,13 +10,6 @@ lerna-debug.log*
 node_modules/
 jspm_packages/
 
-# Python Virtual Environments
-.venv/
-venv/
-ENV/
-env/
-backend/.venv/
-
 # Python Cache
 __pycache__/
 *.py[cod]
@@ -27,13 +20,7 @@ backend/__pycache__/
 dist/
 dist-ssr/
 build/
-out/
-
-# Environment files
-.env
-.env.local
-.env.*
-!.env.example
+out
 
 # IDEs and Editors
 .vscode/*

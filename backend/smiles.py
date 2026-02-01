@@ -1,5 +1,16 @@
+import base64
+import io
+import io
 import numpy as np
 import os
+from rdkit import Chem
+from rdkit.Chem import Draw
+import base64
+import io
+from rdkit import Chem
+from rdkit.Chem.Draw import rdMolDraw2D
+
+
 
 from tensorflow.keras.models import load_model
 from qdrant_client import QdrantClient
@@ -11,8 +22,8 @@ client = QdrantClient(
 )
 
 # Load model from the same directory as this script
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "Blog_simple_smi2lat.h5")
-
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "./ai_model/Blog_simple_smi2lat.h5")
+print(f"ℹ️ SMILES model path set to: {MODEL_PATH}")
 # Lazy loading to avoid crashing if model is missing
 _model = None
 
@@ -49,28 +60,25 @@ def vectorize_single_smiles(smile, embed, char_to_int):
         one_hot[0, len(smile) + 1:, char_to_int["E"]] = 1
     return one_hot[:, 0:-1, :]
 
-def smiles_to_svg(smiles, size=(300, 300)):
-    """Converts a SMILES string to a 2D SVG image string."""
+
+def smiles_to_base64(smiles, size=(300, 300)):
     try:
-        from rdkit import Chem
-        from rdkit.Chem import Draw
-        from rdkit.Chem.Draw import rdMolDraw2D
-        
         mol = Chem.MolFromSmiles(smiles)
         if mol is None:
             return None
-            
-        d2d = rdMolDraw2D.MolDraw2DSVG(size[0], size[1])
-        opts = d2d.drawOptions()
-        opts.clearBackground = False # Better for dark themes
-        
-        d2d.DrawMolecule(mol)
-        d2d.FinishDrawing()
-        return d2d.GetDrawingText()
+
+        Chem.rdDepictor.Compute2DCoords(mol)
+
+        drawer = rdMolDraw2D.MolDraw2DCairo(size[0], size[1])
+        drawer.DrawMolecule(mol)
+        drawer.FinishDrawing()
+
+        png_bytes = drawer.GetDrawingText()
+        return base64.b64encode(png_bytes).decode("utf-8")
+
     except Exception as e:
         print(f"Drawing Error: {e}")
         return None
-
 def search_similar_smiles(smiles_string, limit=5):
     model = get_model()
     if not model:
@@ -78,6 +86,8 @@ def search_similar_smiles(smiles_string, limit=5):
         
     try:
         X = vectorize_single_smiles(smiles_string, embed_dim, char_to_int)
+        print(X)
+        print(f"Vectorized SMILES shape: ", X.shape)
         query_vec = model.predict(X)[0]
         
         # Use the remote cloud client and targeted collection
@@ -92,7 +102,7 @@ def search_similar_smiles(smiles_string, limit=5):
             {
                 "smiles": r.payload.get("smiles", "Unknown"),
                 "score": float(r.score),
-                "svg": smiles_to_svg(r.payload.get("smiles", "")),
+                "image": smiles_to_base64(r.payload.get("smiles", "")),
                 "type": "molecule"
             }
             for r in results.points
